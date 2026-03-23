@@ -1,0 +1,4 @@
+databaseChangeLog:
+  - include:
+      file: changes/1-create-auth-user-table.xml
+      relativeToChangelogFile: true
