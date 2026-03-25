@@ -1,4 +1,4 @@
 package com.innowise.authservice.dto;
 
-public record JwtResponse(String token) {
+public record JwtResponse(String accessToken, String refreshToken) {
 }
