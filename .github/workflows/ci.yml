@@ -31,11 +31,11 @@ jobs:
           restore-keys: |
             ${{ runner.os }}-m2
 
-      # 4. Ensure Docker daemon is running (fix for 10.1)
+      # 4. Ensure Docker daemon is running
       - name: Ensure Docker is running
         run: docker info
 
-      # 5. Build + Test (includes integration tests)
+      # 5. Build + Test
       - name: Build and Test
         run: mvn -B clean verify
 
@@ -45,21 +45,21 @@ jobs:
           SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
         run: |
           mvn sonar:sonar \
-            -Dsonar.projectKey=art-orient_user-service \
-            -Dsonar.organization=art-orient  \
+            -Dsonar.projectKey=art-orient_auth-service \
+            -Dsonar.organization=art-orient \
             -Dsonar.host.url=https://sonarcloud.io \
             -Dsonar.login=$SONAR_TOKEN
 
       # 7. Build Docker Image
       - name: Build Docker image
-        run: docker build -t user_service_app .
+        run: docker build -t auth_service_app .
 
-      # 8. Save Docker image as artifact (optional)
+      # 8. Save Docker image as artifact
       - name: Save Docker image
-        run: docker save user_service_app | gzip > user_service_app.tar.gz
+        run: docker save auth_service_app | gzip > auth_service_app.tar.gz
 
       - name: Upload Docker artifact
         uses: actions/upload-artifact@v4
         with:
-          name: user_service_docker_image
-          path: user_service_app.tar.gz
+          name: auth_service_docker_image
+          path: auth_service_app.tar.gz
