@@ -8,6 +8,7 @@ import com.innowise.authservice.entity.Role;
 import com.innowise.authservice.exception.AuthServiceException;
 import com.innowise.authservice.mapper.AuthUserMapper;
 import com.innowise.authservice.repository.AuthUserRepository;
+import com.innowise.authservice.service.AdminBootstrapper;
 import com.innowise.authservice.service.AuthUserService;
 import com.innowise.authservice.security.JwtService;
 import lombok.RequiredArgsConstructor;
@@ -22,6 +23,7 @@ public class AuthUserServiceImpl implements AuthUserService {
   private final PasswordEncoder passwordEncoder;
   private final JwtService jwtService;
   private final AuthUserMapper mapper;
+  private final AdminBootstrapper adminBootstrapper;
   private static final String USER_NOT_FOUND = "User not found";
   private static final String USER_DEACTIVATED = "User is deactivated";
   private static final String INVALID_CREDENTIALS = "Invalid credentials";
@@ -36,8 +38,7 @@ public class AuthUserServiceImpl implements AuthUserService {
     AuthUser user = mapper.toEntity(request);
     user.setPassword(passwordEncoder.encode(request.password()));
     user.setActive(true);
-    boolean isFirstUser = userRepository.count() == 0;
-    Role role = isFirstUser ? Role.ADMIN : Role.USER;
+    Role role = adminBootstrapper.shouldAssignAdminRole() ? Role.ADMIN : Role.USER;
     user.setRole(role);
     userRepository.save(user);
   }

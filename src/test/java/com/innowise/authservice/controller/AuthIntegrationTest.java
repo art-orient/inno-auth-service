@@ -159,11 +159,11 @@ class AuthIntegrationTest {
             .andReturn()
             .getResponse()
             .getContentAsString();
+
     JwtResponse jwt = objectMapper.readValue(loginResponse, JwtResponse.class);
     String accessToken = jwt.accessToken();
     mockMvc.perform(post("/api/auth/validate")
-                    .contentType(MediaType.APPLICATION_JSON)
-                    .content(accessToken))
+                    .header("Authorization", "Bearer " + accessToken))
             .andExpect(status().isOk())
             .andExpect(content().string(String.valueOf(user.getId())));
   }

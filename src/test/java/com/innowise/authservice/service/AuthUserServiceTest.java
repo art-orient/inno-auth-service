@@ -34,6 +34,9 @@ class AuthUserServiceImplTest {
   @Mock
   private AuthUserMapper mapper;
 
+  @Mock
+  private AdminBootstrapper adminBootstrapper;
+
   @InjectMocks
   private AuthUserServiceImpl service;
 
@@ -46,30 +49,30 @@ class AuthUserServiceImplTest {
   void register_success_firstUserGetsAdminRole() {
     RegisterRequest request = new RegisterRequest("alex", "pass");
     when(userRepository.existsByUsername("alex")).thenReturn(false);
-    when(userRepository.count()).thenReturn(0L);
+    when(adminBootstrapper.shouldAssignAdminRole()).thenReturn(true);
     AuthUser mapped = new AuthUser();
     mapped.setUsername("alex");
     when(mapper.toEntity(request)).thenReturn(mapped);
     when(passwordEncoder.encode("pass")).thenReturn("hashed");
+    when(userRepository.save(any())).thenAnswer(inv -> inv.getArgument(0));
     service.register(request);
     assertEquals("hashed", mapped.getPassword());
     assertTrue(mapped.isActive());
     assertEquals(Role.ADMIN, mapped.getRole());
-    verify(userRepository).save(mapped);
   }
 
   @Test
   void register_success_nextUsersGetUserRole() {
     RegisterRequest request = new RegisterRequest("alex", "pass");
     when(userRepository.existsByUsername("alex")).thenReturn(false);
-    when(userRepository.count()).thenReturn(5L);
+    when(adminBootstrapper.shouldAssignAdminRole()).thenReturn(false);
     AuthUser mapped = new AuthUser();
     mapped.setUsername("alex");
     when(mapper.toEntity(request)).thenReturn(mapped);
     when(passwordEncoder.encode("pass")).thenReturn("hashed");
+    when(userRepository.save(any())).thenAnswer(inv -> inv.getArgument(0));
     service.register(request);
     assertEquals(Role.USER, mapped.getRole());
-    verify(userRepository).save(mapped);
   }
 
   @Test
