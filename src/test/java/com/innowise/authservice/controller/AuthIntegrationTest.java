@@ -1,9 +1,7 @@
 package com.innowise.authservice.controller;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.innowise.authservice.dto.JwtResponse;
-import com.innowise.authservice.dto.LoginRequest;
-import com.innowise.authservice.dto.RegisterRequest;
+import com.innowise.authservice.dto.*;
 import com.innowise.authservice.entity.AuthUser;
 import com.innowise.authservice.entity.Role;
 import com.innowise.authservice.repository.AuthUserRepository;
@@ -25,11 +23,13 @@ import org.testcontainers.utility.DockerImageName;
 
 import static org.hamcrest.Matchers.notNullValue;
 import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
 @SpringBootTest
-@AutoConfigureMockMvc
+@AutoConfigureMockMvc(addFilters = true)
 @Testcontainers(disabledWithoutDocker = true)
 @ActiveProfiles("test")
 class AuthIntegrationTest {
@@ -47,8 +47,7 @@ class AuthIntegrationTest {
     registry.add("spring.datasource.username", postgres::getUsername);
     registry.add("spring.datasource.password", postgres::getPassword);
     registry.add("jwt.secret", () ->
-            "c3VwZXItc2VjcmV0LWtleS0xMjM0NTY3ODkwLTEyMzQ1Njc4OTAtMTIzNDU2Nzg5MC0xMjM0NTY="
-    );
+            "c3VwZXItc2VjcmV0LWtleS0xMjM0NTY3ODkwLTEyMzQ1Njc4OTAtMTIzNDU2Nzg5MC0xMjM0NTY=");
     registry.add("jwt.access-expiration-ms", () -> "60000");
     registry.add("jwt.refresh-expiration-ms", () -> "3600000");
   }
@@ -85,7 +84,7 @@ class AuthIntegrationTest {
                     .content(objectMapper.writeValueAsString(request)))
             .andExpect(status().isCreated());
     AuthUser user = userRepository.findByUsername("alex").orElseThrow();
-    assertEquals(Role.ADMIN, user.getRole());
+    assertEquals(Role.ADMIN, user.getRole()); // first user = admin
   }
 
   @Test
@@ -136,17 +135,17 @@ class AuthIntegrationTest {
             .getResponse()
             .getContentAsString();
     JwtResponse jwt = objectMapper.readValue(loginResponse, JwtResponse.class);
-    String refreshToken = jwt.refreshToken();
+    RefreshTokenRequest refreshRequest = new RefreshTokenRequest(jwt.refreshToken());
     mockMvc.perform(post("/api/auth/refresh")
                     .contentType(MediaType.APPLICATION_JSON)
-                    .content(refreshToken))
+                    .content(objectMapper.writeValueAsString(refreshRequest)))
             .andExpect(status().isOk())
             .andExpect(jsonPath("$.accessToken", notNullValue()))
             .andExpect(jsonPath("$.refreshToken", notNullValue()));
   }
 
   @Test
-  void validate_success_returnsUserId() throws Exception {
+  void validate_success_returnsUserInfo() throws Exception {
     AuthUser user = new AuthUser();
     user.setUsername("alex");
     user.setPassword(encoder.encode("pass"));
@@ -159,12 +158,70 @@ class AuthIntegrationTest {
             .andReturn()
             .getResponse()
             .getContentAsString();
-
     JwtResponse jwt = objectMapper.readValue(loginResponse, JwtResponse.class);
-    String accessToken = jwt.accessToken();
     mockMvc.perform(post("/api/auth/validate")
-                    .header("Authorization", "Bearer " + accessToken))
+                    .header("Authorization", "Bearer " + jwt.accessToken()))
             .andExpect(status().isOk())
-            .andExpect(content().string(String.valueOf(user.getId())));
+            .andExpect(jsonPath("$.userId").value(user.getId()))
+            .andExpect(jsonPath("$.role").value("USER"));
+  }
+
+  @Test
+  void getAllUsers_success() throws Exception {
+    String token = loginAsAdmin();
+    mockMvc.perform(get("/api/auth/users")
+                    .header("Authorization", "Bearer " + token))
+            .andExpect(status().isOk())
+            .andExpect(jsonPath("$").isArray());
+  }
+
+  @Test
+  void activateUser_success() throws Exception {
+    String token = loginAsAdmin();
+    AuthUser user = new AuthUser();
+    user.setUsername("alex");
+    user.setPassword(encoder.encode("pass"));
+    user.setRole(Role.USER);
+    user.setActive(false);
+    userRepository.save(user);
+    mockMvc.perform(post("/api/auth/users/" + user.getId() + "/activate")
+              .header("Authorization", "Bearer " + token)
+              .contentType(MediaType.APPLICATION_JSON))
+              .andExpect(status().isOk());
+    AuthUser updated = userRepository.findById(user.getId()).orElseThrow();
+    assertTrue(updated.isActive());
+  }
+
+  @Test
+  void deactivateUser_success() throws Exception {
+    String token = loginAsAdmin();
+    AuthUser user = new AuthUser();
+    user.setUsername("alex");
+    user.setPassword(encoder.encode("pass"));
+    user.setRole(Role.USER);
+    user.setActive(true);
+    userRepository.save(user);
+    mockMvc.perform(post("/api/auth/users/" + user.getId() + "/deactivate")
+                    .header("Authorization", "Bearer " + token)
+                    .contentType(MediaType.APPLICATION_JSON))
+            .andExpect(status().isOk());
+    AuthUser updated = userRepository.findById(user.getId()).orElseThrow();
+    assertFalse(updated.isActive());
+  }
+
+  private String loginAsAdmin() throws Exception {
+    AuthUser admin = new AuthUser();
+    admin.setUsername("admin");
+    admin.setPassword(encoder.encode("pass"));
+    admin.setRole(Role.ADMIN);
+    admin.setActive(true);
+    userRepository.save(admin);
+    String loginResponse = mockMvc.perform(post("/api/auth/login")
+                    .contentType(MediaType.APPLICATION_JSON)
+                    .content(objectMapper.writeValueAsString(new LoginRequest("admin", "pass"))))
+            .andReturn()
+            .getResponse()
+            .getContentAsString();
+    return objectMapper.readValue(loginResponse, JwtResponse.class).accessToken();
   }
 }

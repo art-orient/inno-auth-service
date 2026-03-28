@@ -1,8 +1,12 @@
 package com.innowise.authservice.service;
 
+import com.innowise.authservice.dto.AuthUserDto;
 import com.innowise.authservice.dto.JwtResponse;
 import com.innowise.authservice.dto.LoginRequest;
 import com.innowise.authservice.dto.RegisterRequest;
+import com.innowise.authservice.dto.ValidateResponse;
+
+import java.util.List;
 
 /**
  * Service interface defining the core authentication operations of the auth module.
@@ -29,13 +33,12 @@ public interface AuthUserService {
   JwtResponse login(LoginRequest request);
 
   /**
-   * Validates the provided JWT access token and returns the ID of the authenticated user.
-   * Implementations must verify token integrity, expiration, and signature.
+   * Validates an access token and extracts user identity information.
    *
-   * @param token the JWT access token to validate
-   * @return the ID of the user extracted from the token if valid
+   * @param token access token
+   * @return user ID and role
    */
-  Long validate(String token);
+  ValidateResponse validate(String token);
 
   /**
    * Issues a new pair of JWT tokens using the provided refresh token.
@@ -45,4 +48,25 @@ public interface AuthUserService {
    * @return a {@link JwtResponse} containing newly generated access and refresh tokens
    */
   JwtResponse refresh(String refreshToken);
+
+  /**
+   * Returns all users. Accessible only to administrators.
+   *
+   * @return list of users
+   */
+  List<AuthUserDto> getAllUsers();
+
+  /**
+   * Activates a user account.
+   *
+   * @param id user identifier
+   */
+  void activateUser(Long id);
+
+  /**
+   * Deactivates a user account.
+   *
+   * @param id user identifier
+   */
+  void deactivateUser(Long id);
 }

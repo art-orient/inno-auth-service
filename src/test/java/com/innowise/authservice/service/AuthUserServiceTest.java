@@ -1,5 +1,6 @@
 package com.innowise.authservice.service;
 
+import com.innowise.authservice.dto.AuthUserDto;
 import com.innowise.authservice.dto.JwtResponse;
 import com.innowise.authservice.dto.LoginRequest;
 import com.innowise.authservice.dto.RegisterRequest;
@@ -131,8 +132,10 @@ class AuthUserServiceImplTest {
   void validate_success() {
     when(jwtService.isTokenValid("token")).thenReturn(true);
     when(jwtService.extractUserId("token")).thenReturn(10L);
-    Long id = service.validate("token");
-    assertEquals(10L, id);
+    when(jwtService.extractRole("token")).thenReturn("ADMIN");
+    var response = service.validate("token");
+    assertEquals(10L, response.userId());
+    assertEquals("ADMIN", response.role());
   }
 
   @Test
@@ -167,5 +170,51 @@ class AuthUserServiceImplTest {
     when(jwtService.extractUserId("refresh")).thenReturn(1L);
     when(userRepository.findById(1L)).thenReturn(Optional.empty());
     assertThrows(AuthServiceException.class, () -> service.refresh("refresh"));
+  }
+
+  @Test
+  void getAllUsers_success() {
+    AuthUser user = new AuthUser();
+    user.setId(1L);
+    user.setUsername("alex");
+    user.setRole(Role.USER);
+    user.setActive(true);
+    when(userRepository.findAll()).thenReturn(java.util.List.of(user));
+    when(mapper.toDto(user)).thenReturn(new AuthUserDto(1L, "alex", "USER", true));
+    var result = service.getAllUsers();
+    assertEquals(1, result.size());
+    assertEquals("alex", result.get(0).username());
+  }
+
+  @Test
+  void activateUser_success() {
+    AuthUser user = new AuthUser();
+    user.setActive(false);
+    when(userRepository.findById(1L)).thenReturn(Optional.of(user));
+    service.activateUser(1L);
+    assertTrue(user.isActive());
+    verify(userRepository).save(user);
+  }
+
+  @Test
+  void deactivateUser_success() {
+    AuthUser user = new AuthUser();
+    user.setActive(true);
+    when(userRepository.findById(1L)).thenReturn(Optional.of(user));
+    service.deactivateUser(1L);
+    assertFalse(user.isActive());
+    verify(userRepository).save(user);
+  }
+
+  @Test
+  void activateUser_userNotFound_throws() {
+    when(userRepository.findById(1L)).thenReturn(Optional.empty());
+    assertThrows(AuthServiceException.class, () -> service.activateUser(1L));
+  }
+
+  @Test
+  void deactivateUser_userNotFound_throws() {
+    when(userRepository.findById(1L)).thenReturn(Optional.empty());
+    assertThrows(AuthServiceException.class, () -> service.deactivateUser(1L));
   }
 }

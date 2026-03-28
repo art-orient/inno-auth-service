@@ -1,18 +1,26 @@
 package com.innowise.authservice.controller;
 
+import com.innowise.authservice.dto.AuthUserDto;
 import com.innowise.authservice.dto.JwtResponse;
 import com.innowise.authservice.dto.LoginRequest;
+import com.innowise.authservice.dto.RefreshTokenRequest;
 import com.innowise.authservice.dto.RegisterRequest;
+import com.innowise.authservice.dto.ValidateResponse;
 import com.innowise.authservice.exception.AuthServiceException;
 import com.innowise.authservice.service.AuthUserService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestHeader;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
+
+import java.util.List;
 
 /**
  * REST controller providing authentication-related endpoints such as user registration,
@@ -58,8 +66,8 @@ public class AuthController {
    * @return a {@link JwtResponse} containing newly generated access and refresh tokens
    */
   @PostMapping("/refresh")
-  public JwtResponse refresh(@RequestBody String refreshToken) {
-    return authUserService.refresh(refreshToken);
+  public JwtResponse refresh(@RequestBody RefreshTokenRequest request) {
+    return authUserService.refresh(request.refreshToken());
   }
 
   /**
@@ -70,15 +78,48 @@ public class AuthController {
    * an {@link AuthServiceException} is thrown.
    *
    * @param authorizationHeader the Authorization header containing the Bearer token
-   * @return the user ID extracted from the validated token
+   * @return user identity information extracted from the validated token
    * @throws AuthServiceException if the header is missing, malformed, or the token is invalid
    */
   @PostMapping("/validate")
-  public Long validate(@RequestHeader("Authorization") String authorizationHeader) {
+  public ValidateResponse validate(@RequestHeader("Authorization") String authorizationHeader) {
     if (authorizationHeader == null || !authorizationHeader.startsWith("Bearer ")) {
       throw new AuthServiceException("Missing or invalid Authorization header");
     }
     String token = authorizationHeader.replace("Bearer ", "");
     return authUserService.validate(token);
+  }
+
+  /**
+   * Returns a list of all users. Accessible only to administrators.
+   *
+   * @return list of users with basic identity information
+   */
+  @GetMapping("/users")
+  @PreAuthorize("hasRole('ADMIN')")
+  public List<AuthUserDto> getAllUsers() {
+    return authUserService.getAllUsers();
+  }
+
+  /**
+   * Activates a user account. Accessible only to administrators.
+   *
+   * @param id identifier of the user to activate
+   */
+  @PostMapping("/users/{id}/activate")
+  @PreAuthorize("hasRole('ADMIN')")
+  public void activateUser(@PathVariable Long id) {
+    authUserService.activateUser(id);
+  }
+
+  /**
+   * Deactivates a user account. Accessible only to administrators.
+   *
+   * @param id identifier of the user to deactivate
+   */
+  @PostMapping("/users/{id}/deactivate")
+  @PreAuthorize("hasRole('ADMIN')")
+  public void deactivateUser(@PathVariable Long id) {
+    authUserService.deactivateUser(id);
   }
 }

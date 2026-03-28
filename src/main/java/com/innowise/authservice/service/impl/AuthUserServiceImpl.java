@@ -1,8 +1,10 @@
 package com.innowise.authservice.service.impl;
 
+import com.innowise.authservice.dto.AuthUserDto;
 import com.innowise.authservice.dto.JwtResponse;
 import com.innowise.authservice.dto.LoginRequest;
 import com.innowise.authservice.dto.RegisterRequest;
+import com.innowise.authservice.dto.ValidateResponse;
 import com.innowise.authservice.entity.AuthUser;
 import com.innowise.authservice.entity.Role;
 import com.innowise.authservice.exception.AuthServiceException;
@@ -14,6 +16,8 @@ import com.innowise.authservice.security.JwtService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
+
+import java.util.List;
 
 @Service
 @RequiredArgsConstructor
@@ -51,11 +55,13 @@ public class AuthUserServiceImpl implements AuthUserService {
   }
 
   @Override
-  public Long validate(String token) {
+  public ValidateResponse validate(String token) {
     if (!jwtService.isTokenValid(token)) {
       throw new AuthServiceException(INVALID_TOKEN);
     }
-    return jwtService.extractUserId(token);
+    Long id = jwtService.extractUserId(token);
+    String role = jwtService.extractRole(token);
+    return new ValidateResponse(id, role);
   }
 
   @Override
@@ -88,5 +94,28 @@ public class AuthUserServiceImpl implements AuthUserService {
     String accessToken = jwtService.generateAccessToken(user);
     String refreshToken = jwtService.generateRefreshToken(user);
     return new JwtResponse(accessToken, refreshToken);
+  }
+
+  @Override
+  public List<AuthUserDto> getAllUsers() {
+    return userRepository.findAll().stream()
+            .map(mapper::toDto)
+            .toList();
+  }
+
+  @Override
+  public void activateUser(Long id) {
+    AuthUser user = userRepository.findById(id)
+            .orElseThrow(() -> new AuthServiceException(USER_NOT_FOUND));
+    user.setActive(true);
+    userRepository.save(user);
+  }
+
+  @Override
+  public void deactivateUser(Long id) {
+    AuthUser user = userRepository.findById(id)
+            .orElseThrow(() -> new AuthServiceException(USER_NOT_FOUND));
+    user.setActive(false);
+    userRepository.save(user);
   }
 }

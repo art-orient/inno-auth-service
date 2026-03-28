@@ -1,5 +1,6 @@
 package com.innowise.authservice.mapper;
 
+import com.innowise.authservice.dto.AuthUserDto;
 import com.innowise.authservice.dto.RegisterRequest;
 import com.innowise.authservice.entity.AuthUser;
 import org.mapstruct.Mapper;
@@ -13,4 +14,6 @@ public interface AuthUserMapper {
   @Mapping(target = "active", ignore = true)
   @Mapping(target = "password", ignore = true)
   AuthUser toEntity(RegisterRequest dto);
+
+  AuthUserDto toDto(AuthUser user);
 }
