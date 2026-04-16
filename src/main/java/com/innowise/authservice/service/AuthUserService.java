@@ -17,12 +17,21 @@ import java.util.List;
 public interface AuthUserService {
 
   /**
-   * Registers a new user in the system using the provided registration data.
-   * Implementations must validate the request and ensure that the username is unique.
+   * Registers a new authentication user using the provided credentials.
+   * <p>
+   * The method validates that the username is unique, encodes the password,
+   * assigns a role (ADMIN or USER depending on bootstrap logic), activates the account,
+   * persists the user entity, and returns the created user as a DTO.
+   * <p>
+   * This method is used as the first step in the distributed registration flow
+   * (Saga pattern), therefore it must return the identifier of the newly created user
+   * to allow further orchestration and potential rollback.
    *
    * @param request the registration data containing username and password
+   * @return {@link AuthUserDto} containing the id, username, role, and active status
+   * @throws AuthServiceException if the username already exists
    */
-  void register(RegisterRequest request);
+  AuthUserDto register(RegisterRequest request);
 
   /**
    * Authenticates a user using the provided credentials and issues a pair of JWT tokens.
@@ -69,4 +78,6 @@ public interface AuthUserService {
    * @param id user identifier
    */
   void deactivateUser(Long id);
+
+  void delete(Long id);
 }

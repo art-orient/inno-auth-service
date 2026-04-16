@@ -217,4 +217,20 @@ class AuthUserServiceImplTest {
     when(userRepository.findById(1L)).thenReturn(Optional.empty());
     assertThrows(AuthServiceException.class, () -> service.deactivateUser(1L));
   }
+
+  @Test
+  void delete_success() {
+    AuthUser user = new AuthUser();
+    user.setId(1L);
+    when(userRepository.findById(1L)).thenReturn(Optional.of(user));
+    service.delete(1L);
+    verify(userRepository).delete(user);
+  }
+
+  @Test
+  void delete_userNotFound_throws() {
+    when(userRepository.findById(99L)).thenReturn(Optional.empty());
+    assertThrows(AuthServiceException.class, () -> service.delete(99L));
+    verify(userRepository, never()).delete(any());
+  }
 }

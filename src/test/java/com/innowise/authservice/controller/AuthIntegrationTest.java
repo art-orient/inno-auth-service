@@ -224,4 +224,28 @@ class AuthIntegrationTest {
             .getContentAsString();
     return objectMapper.readValue(loginResponse, JwtResponse.class).accessToken();
   }
+
+  @Test
+  void deleteUser_success_returns204() throws Exception {
+    String token = loginAsAdmin();
+    AuthUser user = new AuthUser();
+    user.setUsername("alex");
+    user.setPassword(encoder.encode("pass"));
+    user.setRole(Role.USER);
+    user.setActive(true);
+    userRepository.save(user);
+    mockMvc.perform(delete("/api/auth/" + user.getId())
+                    .header("Authorization", "Bearer " + token))
+            .andExpect(status().isNoContent());
+    assertFalse(userRepository.findById(user.getId()).isPresent());
+  }
+
+  @Test
+  void deleteUser_notFound_returns400() throws Exception {
+    String token = loginAsAdmin();
+    mockMvc.perform(delete("/api/auth/999")
+                    .header("Authorization", "Bearer " + token))
+            .andExpect(status().isBadRequest())
+            .andExpect(content().string("User not found"));
+  }
 }

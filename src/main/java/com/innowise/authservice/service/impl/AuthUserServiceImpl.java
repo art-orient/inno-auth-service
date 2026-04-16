@@ -16,6 +16,7 @@ import com.innowise.authservice.security.JwtService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
 
@@ -35,7 +36,8 @@ public class AuthUserServiceImpl implements AuthUserService {
   private static final String INVALID_TOKEN = "Invalid token";
 
   @Override
-  public void register(RegisterRequest request) {
+  @Transactional
+  public AuthUserDto  register(RegisterRequest request) {
     if (userRepository.existsByUsername(request.username())) {
       throw new AuthServiceException(USERNAME_EXISTS);
     }
@@ -44,7 +46,8 @@ public class AuthUserServiceImpl implements AuthUserService {
     user.setActive(true);
     Role role = adminBootstrapper.shouldAssignAdminRole() ? Role.ADMIN : Role.USER;
     user.setRole(role);
-    userRepository.save(user);
+    AuthUser saved = userRepository.save(user);
+    return mapper.toDto(saved);
   }
 
   @Override
@@ -104,6 +107,7 @@ public class AuthUserServiceImpl implements AuthUserService {
   }
 
   @Override
+  @Transactional
   public void activateUser(Long id) {
     AuthUser user = userRepository.findById(id)
             .orElseThrow(() -> new AuthServiceException(USER_NOT_FOUND));
@@ -112,10 +116,19 @@ public class AuthUserServiceImpl implements AuthUserService {
   }
 
   @Override
+  @Transactional
   public void deactivateUser(Long id) {
     AuthUser user = userRepository.findById(id)
             .orElseThrow(() -> new AuthServiceException(USER_NOT_FOUND));
     user.setActive(false);
     userRepository.save(user);
+  }
+
+  @Override
+  @Transactional
+  public void delete(Long id) {
+    AuthUser user = userRepository.findById(id)
+            .orElseThrow(() -> new AuthServiceException(USER_NOT_FOUND));
+    userRepository.delete(user);
   }
 }

@@ -12,6 +12,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -43,9 +44,9 @@ public class AuthController {
    * @return an empty response with HTTP status 201
    */
   @PostMapping("/register")
-  public ResponseEntity<Void> register(@RequestBody RegisterRequest request) {
-    authUserService.register(request);
-    return ResponseEntity.status(HttpStatus.CREATED).build();
+  public ResponseEntity<AuthUserDto> register(@RequestBody RegisterRequest request) {
+    AuthUserDto created = authUserService.register(request);
+    return ResponseEntity.status(HttpStatus.CREATED).body(created);
   }
 
   /**
@@ -121,5 +122,11 @@ public class AuthController {
   @PreAuthorize("hasRole('ADMIN')")
   public void deactivateUser(@PathVariable Long id) {
     authUserService.deactivateUser(id);
+  }
+
+  @DeleteMapping("/{id}")
+  public ResponseEntity<Void> delete(@PathVariable Long id) {
+    authUserService.delete(id);
+    return ResponseEntity.noContent().build();
   }
 }
