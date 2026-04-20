@@ -43,7 +43,7 @@ public class AuthController {
    * @param request the registration data containing username and password
    * @return an empty response with HTTP status 201
    */
-  @PostMapping("/register")
+  @PostMapping("/credentials")
   public ResponseEntity<AuthUserDto> register(@RequestBody RegisterRequest request) {
     AuthUserDto created = authUserService.register(request);
     return ResponseEntity.status(HttpStatus.CREATED).body(created);
@@ -63,7 +63,7 @@ public class AuthController {
   /**
    * Issues a new pair of JWT tokens using the provided refresh token.
    *
-   * @param refreshToken the refresh token used to obtain new tokens
+   * @param request the request containing the refresh token
    * @return a {@link JwtResponse} containing newly generated access and refresh tokens
    */
   @PostMapping("/refresh")

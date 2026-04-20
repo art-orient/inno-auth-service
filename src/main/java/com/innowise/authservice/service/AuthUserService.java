@@ -29,7 +29,6 @@ public interface AuthUserService {
    *
    * @param request the registration data containing username and password
    * @return {@link AuthUserDto} containing the id, username, role, and active status
-   * @throws AuthServiceException if the username already exists
    */
   AuthUserDto register(RegisterRequest request);
 
@@ -79,5 +78,15 @@ public interface AuthUserService {
    */
   void deactivateUser(Long id);
 
+  /**
+   * Permanently removes user authentication credentials.
+   * <p>
+   * This operation deletes the user's login data and associated authentication
+   * records. It is typically used during system cleanup or as part of a
+   * multi-service rollback sequence. Once deleted, the user cannot be restored.
+   * </p>
+   *
+   * @param id the identifier of the user whose credentials should be removed
+   */
   void delete(Long id);
 }

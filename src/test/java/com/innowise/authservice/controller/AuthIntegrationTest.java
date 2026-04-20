@@ -79,7 +79,7 @@ class AuthIntegrationTest {
   @Test
   void register_success_createsUser() throws Exception {
     RegisterRequest request = new RegisterRequest("alex", "pass");
-    mockMvc.perform(post("/api/auth/register")
+    mockMvc.perform(post("/api/auth/credentials")
                     .contentType(MediaType.APPLICATION_JSON)
                     .content(objectMapper.writeValueAsString(request)))
             .andExpect(status().isCreated());
@@ -96,7 +96,7 @@ class AuthIntegrationTest {
     user.setActive(true);
     userRepository.save(user);
     RegisterRequest request = new RegisterRequest("alex", "pass");
-    mockMvc.perform(post("/api/auth/register")
+    mockMvc.perform(post("/api/auth/credentials")
                     .contentType(MediaType.APPLICATION_JSON)
                     .content(objectMapper.writeValueAsString(request)))
             .andExpect(status().isBadRequest())
