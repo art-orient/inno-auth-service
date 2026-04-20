@@ -8,6 +8,7 @@ import com.innowise.authservice.dto.RegisterRequest;
 import com.innowise.authservice.dto.ValidateResponse;
 import com.innowise.authservice.exception.AuthServiceException;
 import com.innowise.authservice.service.AuthUserService;
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -44,7 +45,7 @@ public class AuthController {
    * @return an empty response with HTTP status 201
    */
   @PostMapping("/credentials")
-  public ResponseEntity<AuthUserDto> register(@RequestBody RegisterRequest request) {
+  public ResponseEntity<AuthUserDto> register(@Valid @RequestBody RegisterRequest request) {
     AuthUserDto created = authUserService.register(request);
     return ResponseEntity.status(HttpStatus.CREATED).body(created);
   }
