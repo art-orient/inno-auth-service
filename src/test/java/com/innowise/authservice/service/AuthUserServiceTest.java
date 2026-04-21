@@ -14,6 +14,7 @@ import com.innowise.authservice.service.impl.AuthUserServiceImpl;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.*;
+import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.security.crypto.password.PasswordEncoder;
 
 import java.util.Optional;
@@ -78,10 +79,16 @@ class AuthUserServiceImplTest {
 
   @Test
   void register_usernameExists_throws() {
-    RegisterRequest request = new RegisterRequest("alex", "pass");
-    when(userRepository.existsByUsername("alex")).thenReturn(true);
+    RegisterRequest request = new RegisterRequest("demo", "pass");
+    AuthUser mockUser = new AuthUser();
+    mockUser.setUsername("demo");
+    mockUser.setActive(true);
+    mockUser.setRole(Role.USER);
+    mockUser.setPassword("raw");
+    when(mapper.toEntity(any())).thenReturn(mockUser);
+    when(userRepository.save(any()))
+            .thenThrow(new DataIntegrityViolationException("duplicate"));
     assertThrows(AuthServiceException.class, () -> service.register(request));
-    verify(userRepository, never()).save(any());
   }
 
   @Test
