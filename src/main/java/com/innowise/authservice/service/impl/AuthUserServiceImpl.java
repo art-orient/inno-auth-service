@@ -14,6 +14,7 @@ import com.innowise.authservice.service.AdminBootstrapper;
 import com.innowise.authservice.service.AuthUserService;
 import com.innowise.authservice.security.JwtService;
 import lombok.RequiredArgsConstructor;
+import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -37,17 +38,18 @@ public class AuthUserServiceImpl implements AuthUserService {
 
   @Override
   @Transactional
-  public AuthUserDto  register(RegisterRequest request) {
-    if (userRepository.existsByUsername(request.username())) {
-      throw new AuthServiceException(USERNAME_EXISTS);
-    }
+  public AuthUserDto register(RegisterRequest request) {
     AuthUser user = mapper.toEntity(request);
     user.setPassword(passwordEncoder.encode(request.password()));
     user.setActive(true);
     Role role = adminBootstrapper.shouldAssignAdminRole() ? Role.ADMIN : Role.USER;
     user.setRole(role);
-    AuthUser saved = userRepository.save(user);
-    return mapper.toDto(saved);
+    try {
+      AuthUser saved = userRepository.save(user);
+      return mapper.toDto(saved);
+    } catch (DataIntegrityViolationException e) {
+      throw new AuthServiceException(USERNAME_EXISTS);
+    }
   }
 
   @Override
