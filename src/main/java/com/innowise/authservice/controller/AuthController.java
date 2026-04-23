@@ -2,16 +2,16 @@ package com.innowise.authservice.controller;
 
 import com.innowise.authservice.dto.AuthUserDto;
 import com.innowise.authservice.dto.JwtResponse;
-import com.innowise.authservice.dto.LoginRequest;
-import com.innowise.authservice.dto.RefreshTokenRequest;
 import com.innowise.authservice.dto.RegisterRequest;
 import com.innowise.authservice.dto.ValidateResponse;
 import com.innowise.authservice.exception.AuthServiceException;
 import com.innowise.authservice.service.AuthUserService;
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -43,9 +43,9 @@ public class AuthController {
    * @return an empty response with HTTP status 201
    */
   @PostMapping("/credentials")
-  public ResponseEntity<Void> register(@RequestBody RegisterRequest request) {
-    authUserService.register(request);
-    return ResponseEntity.status(HttpStatus.CREATED).build();
+  public ResponseEntity<AuthUserDto> register(@Valid @RequestBody RegisterRequest request) {
+    AuthUserDto created = authUserService.register(request);
+    return ResponseEntity.status(HttpStatus.CREATED).body(created);
   }
 
   /**
@@ -62,7 +62,7 @@ public class AuthController {
   /**
    * Issues a new pair of JWT tokens using the provided refresh token.
    *
-   * @param refreshToken the refresh token used to obtain new tokens
+   * @param request the request containing the refresh token
    * @return a {@link JwtResponse} containing newly generated access and refresh tokens
    */
   @PostMapping("/refresh")
@@ -121,5 +121,11 @@ public class AuthController {
   @PreAuthorize("hasRole('ADMIN')")
   public void deactivateUser(@PathVariable Long id) {
     authUserService.deactivateUser(id);
+  }
+
+  @DeleteMapping("/{id}")
+  public ResponseEntity<Void> delete(@PathVariable Long id) {
+    authUserService.delete(id);
+    return ResponseEntity.noContent().build();
   }
 }
