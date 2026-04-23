@@ -42,7 +42,7 @@ public class AuthController {
    * @param request the registration data containing username and password
    * @return an empty response with HTTP status 201
    */
-  @PostMapping("/register")
+  @PostMapping("/credentials")
   public ResponseEntity<Void> register(@RequestBody RegisterRequest request) {
     authUserService.register(request);
     return ResponseEntity.status(HttpStatus.CREATED).build();

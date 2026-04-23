@@ -6,6 +6,7 @@ import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.SignatureAlgorithm;
 import io.jsonwebtoken.io.Decoders;
 import io.jsonwebtoken.security.Keys;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 
@@ -15,6 +16,7 @@ import java.util.Map;
 import java.util.function.Function;
 
 @Service
+@Slf4j
 public class JwtService {
 
   private static final String CLAIM_USER_ID = "userId";
@@ -69,12 +71,18 @@ public class JwtService {
   private String generateToken(Map<String, Object> claims, long expirationMs) {
     Date now = new Date();
     Date expiration = new Date(now.getTime() + expirationMs);
-    return Jwts.builder()
+    String token = Jwts.builder()
             .setClaims(claims)
             .setIssuedAt(now)
             .setExpiration(expiration)
             .signWith(getSigningKey(), SignatureAlgorithm.HS256)
             .compact();
+    log.info("AUTH-SERVICE GENERATED TOKEN: {}", token);
+    log.info("IAT  (issued at): {} (ms={})", now, now.getTime());
+    log.info("EXP  (expires)  : {} (ms={})", expiration, expiration.getTime());
+    log.info("NOW  (container): {} (ms={})", new Date(), System.currentTimeMillis());
+    log.info("EXP - NOW (ms)  : {}", expiration.getTime() - System.currentTimeMillis());
+    return token;
   }
 
   private boolean isTokenNotExpired(String token) {
