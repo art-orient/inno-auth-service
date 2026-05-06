@@ -2,6 +2,8 @@ package com.innowise.authservice.controller;
 
 import com.innowise.authservice.dto.AuthUserDto;
 import com.innowise.authservice.dto.JwtResponse;
+import com.innowise.authservice.dto.LoginRequest;
+import com.innowise.authservice.dto.RefreshTokenRequest;
 import com.innowise.authservice.dto.RegisterRequest;
 import com.innowise.authservice.dto.ValidateResponse;
 import com.innowise.authservice.exception.AuthServiceException;
