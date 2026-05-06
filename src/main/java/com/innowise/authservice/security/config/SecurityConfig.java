@@ -28,7 +28,7 @@ public class SecurityConfig {
                             "/api/auth/login",
                             "/api/auth/credentials",
                             "/api/auth/refresh",
-                            "/api/auth/credentials"
+                            "/actuator/**"
                     ).permitAll()
                     .anyRequest().authenticated()
             )
